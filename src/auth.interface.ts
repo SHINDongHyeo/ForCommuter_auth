@@ -3,3 +3,10 @@ export enum Provider {
     Kakao = 'kakao',
     Apple = 'apple',
 }
+
+export interface GoogleLogInResponse {
+    jwt: string;
+    userInfo: {
+        nick: string,
+    };
+}

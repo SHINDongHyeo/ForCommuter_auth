@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { User } from './entities/auth.entity';
 import { Repository } from 'typeorm';
-import { Provider } from './auth.interface';
+import { GoogleLogInResponse, Provider } from './auth.interface';
 
 @Injectable()
 export class AuthService {
@@ -18,10 +18,11 @@ export class AuthService {
         this.client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     }
 
-    async googleLogIn(idToken: string): Promise<string> {
+    async googleLogIn(idToken: string): Promise<GoogleLogInResponse> {
         const payload = await this.validateGoogleToken(idToken);
-        await this.isRegistered(payload.email, Provider.Google);
-        return await this.createGoogleJwt(payload);
+        const user = await this.isRegistered(payload.email, Provider.Google);
+        const jwt = await this.createGoogleJwt(payload);
+        return { jwt, userInfo: { nick: user.nick } };
     }
 
     async validateGoogleToken(idToken: string): Promise<TokenPayload> {

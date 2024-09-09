@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpStatus, Post, Query, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { GoogleLogInResponse } from './auth.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -8,7 +9,7 @@ export class AuthController {
     @Post('google')
     async googleLogIn(
         @Body('idToken') idToken: string,
-    ): Promise<string> {
+    ): Promise<GoogleLogInResponse> {
         return await this.authService.googleLogIn(idToken);
     }
 
