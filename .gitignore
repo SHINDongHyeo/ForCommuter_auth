@@ -182,3 +182,8 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # typeorm
 ormconfig.json
+
+# logs
+logs
+
+
