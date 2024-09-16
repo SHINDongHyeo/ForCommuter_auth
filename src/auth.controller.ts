@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Headers } from '@nestjs/common';
 import AuthService from './auth.service';
 import {
 	LogInResponse,
@@ -46,10 +46,26 @@ class AuthController {
 		return this.authService.signUp(nick, idToken, Provider.Google);
 	}
 
+	// 자동 로그인
+	@Get('auto/log-in')
+	async logInAuto(
+		@Headers('authorization') authHeader: string,
+	): Promise<boolean> {
+		return this.authService.logInAuto(authHeader);
+	}
+
 	// 닉네임 검증
 	@Get('nick/validate')
 	async validateNick(@Query('nick') nick: string): Promise<boolean> {
 		return this.authService.validateNick(nick);
+	}
+
+	// JWT 인증
+	@Get('jwt/validate')
+	async validateJwt(
+		@Headers('authorization') authHeader: string,
+	): Promise<boolean> {
+		return this.authService.validateJwt(authHeader);
 	}
 }
 export default AuthController;

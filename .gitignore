@@ -177,13 +177,9 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # dotenv
-.env
 .env.*
 
 # typeorm
 ormconfig.json
-
-# logs
-logs
 
 

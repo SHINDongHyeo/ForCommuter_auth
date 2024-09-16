@@ -32,7 +32,7 @@ import User from './entities/auth.entity';
 			inject: [ConfigService],
 			useFactory: async (configService: ConfigService) => ({
 				secret: configService.get<string>('JWT_SECRET'),
-				signOptions: { expiresIn: '1h' },
+				signOptions: { expiresIn: '1y' },
 			}),
 		}),
 	],

@@ -125,8 +125,51 @@ class AuthService {
 	}
 
 	// JWT 발급
-	async createJwt(socialId: string) {
+	async createJwt(socialId: string): Promise<string> {
 		return this.jwtService.sign({ socialId });
+	}
+
+	// JWT 인증
+	async validateJwt(authHeader: string): Promise<boolean> {
+		const token = await AuthService.authenticate(authHeader);
+		try {
+			await this.jwtService.verify(token, {
+				secret: process.env.JWT_SECRET,
+			});
+			return true;
+		} catch (error) {
+			throw new UnauthorizedException('Invalid Token');
+		}
+	}
+
+	// 헤더 인증 정보 추출
+	static async authenticate(authHeader: string): Promise<string> {
+		if (!authHeader) {
+			throw new UnauthorizedException('Authorization header is missing');
+		}
+
+		const token = authHeader.split(' ')[1];
+
+		if (!token) {
+			throw new UnauthorizedException('Token is missing');
+		}
+		return token;
+	}
+
+	// 자동 로그인
+	async logInAuto(authHeader: string): Promise<boolean> {
+		const token = await AuthService.authenticate(authHeader);
+		try {
+			const decoded = await this.jwtService.verify(token, {
+				secret: process.env.JWT_SECRET,
+			});
+			if (decoded) {
+				return true;
+			}
+			return false;
+		} catch (error) {
+			return false;
+		}
 	}
 
 	// 회원가입
