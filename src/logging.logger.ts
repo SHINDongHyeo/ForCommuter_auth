@@ -1,4 +1,5 @@
 import { createLogger, format, transports } from 'winston';
+import * as moment from 'moment-timezone';
 
 const customFormat = format.printf(({ message, timestamp }) => {
 	return JSON.stringify(
@@ -12,7 +13,13 @@ const customFormat = format.printf(({ message, timestamp }) => {
 });
 
 const logger = createLogger({
-	format: format.combine(format.timestamp(), customFormat),
+	format: format.combine(
+		format.timestamp({
+			format: () =>
+				moment().tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss'),
+		}),
+		customFormat,
+	),
 	transports: [
 		new transports.Console(),
 		new transports.File({ filename: './logs/auth.log' }),
