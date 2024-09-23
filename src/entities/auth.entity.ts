@@ -1,5 +1,5 @@
-import { Provider } from 'src/auth.interface';
 import { Entity, Column, CreateDateColumn, PrimaryColumn } from 'typeorm';
+import { Provider } from '../auth.interface';
 
 @Entity()
 class User {
