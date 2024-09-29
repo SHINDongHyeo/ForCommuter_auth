@@ -1,18 +1,18 @@
 import {
 	Injectable,
-	Logger,
 	NotFoundException,
 	UnauthorizedException,
 } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, TreeRepositoryUtils } from 'typeorm';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { JwtService } from '@nestjs/jwt';
 
 import axios from 'axios';
 import * as fs from 'fs';
 
+import { Response } from 'express';
 import User from './entities/auth.entity';
 import {
 	KakaoPayload,
@@ -24,14 +24,12 @@ import {
 
 @Injectable()
 class AuthService {
-	private readonly logger = new Logger(AuthService.name);
-
 	constructor(
 		@InjectRepository(User)
 		private readonly userRepository: Repository<User>,
 		private readonly jwtService: JwtService,
 		private readonly googleClient: OAuth2Client,
-	) {}
+	) { }
 
 	// 카카오, 구글 로그인
 	async logIn(
@@ -130,13 +128,14 @@ class AuthService {
 	}
 
 	// JWT 인증
-	async validateJwt(authHeader: string): Promise<boolean> {
+	async validateJwt(authHeader: string, response: Response): Promise<void> {
 		const token = await AuthService.authenticate(authHeader);
 		try {
-			await this.jwtService.verify(token, {
+			const decoded = await this.jwtService.verifyAsync(token, {
 				secret: process.env.JWT_SECRET,
 			});
-			return true;
+
+			response.status(200).json({ socialId: decoded.socialId });
 		} catch (error) {
 			throw new UnauthorizedException('Invalid Token');
 		}

@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Post, Query, Headers } from '@nestjs/common';
+import {
+	Body,
+	Controller,
+	Get,
+	Post,
+	Query,
+	Headers,
+	Res,
+	Patch,
+	Put,
+	Delete,
+} from '@nestjs/common';
+import { Response } from 'express';
 import AuthService from './auth.service';
 import {
 	LogInResponse,
@@ -9,7 +21,7 @@ import {
 
 @Controller('auth')
 class AuthController {
-	constructor(private readonly authService: AuthService) {}
+	constructor(private readonly authService: AuthService) { }
 
 	// 카카오 로그인
 	@Post('kakao/log-in')
@@ -62,10 +74,11 @@ class AuthController {
 
 	// JWT 인증
 	@Get('jwt/validate')
-	async validateJwt(
+	async getValidateJwt(
 		@Headers('authorization') authHeader: string,
-	): Promise<boolean> {
-		return this.authService.validateJwt(authHeader);
+		@Res() response: Response,
+	): Promise<void> {
+		return this.authService.validateJwt(authHeader, response);
 	}
 }
 export default AuthController;
