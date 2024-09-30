@@ -18,59 +18,11 @@ import {
 	SignUpRedirectResponse,
 	SignUpResponse,
 } from './auth.interface';
+import { LogInGoogleDto, LogInKakaoDto, SignUpGoogleDto, SignUpKakaoDto } from './dtos/auth.dto';
 
 @Controller('auth')
 class AuthController {
 	constructor(private readonly authService: AuthService) { }
-
-	// 카카오 로그인
-	@Post('kakao/log-in')
-	async logInKakao(
-		@Body('accessToken') accessToken: string,
-	): Promise<LogInResponse | SignUpRedirectResponse> {
-		return this.authService.logIn(accessToken, Provider.Kakao);
-	}
-
-	// 카카오 회원가입
-	@Post('kakao/sign-up')
-	async signUpKakao(
-		@Body('name') name: string,
-		@Body('nick') nick: string,
-		@Body('accessToken') accessToken: string,
-	): Promise<SignUpResponse> {
-		return this.authService.signUp(nick, accessToken, Provider.Kakao, name);
-	}
-
-	// 구글 로그인
-	@Post('google/log-in')
-	async logInGoogle(
-		@Body('idToken') idToken: string,
-	): Promise<LogInResponse | SignUpRedirectResponse> {
-		return this.authService.logIn(idToken, Provider.Google);
-	}
-
-	// 구글 회원가입
-	@Post('google/sign-up')
-	async signUpGoogle(
-		@Body('nick') nick: string,
-		@Body('idToken') idToken: string,
-	): Promise<SignUpResponse> {
-		return this.authService.signUp(nick, idToken, Provider.Google);
-	}
-
-	// 자동 로그인
-	@Get('auto/log-in')
-	async logInAuto(
-		@Headers('authorization') authHeader: string,
-	): Promise<boolean> {
-		return this.authService.logInAuto(authHeader);
-	}
-
-	// 닉네임 검증
-	@Get('nick/validate')
-	async validateNick(@Query('nick') nick: string): Promise<boolean> {
-		return this.authService.validateNick(nick);
-	}
 
 	// JWT 인증
 	@Get('jwt/validate')
@@ -79,6 +31,45 @@ class AuthController {
 		@Res() response: Response,
 	): Promise<void> {
 		return this.authService.validateJwt(authHeader, response);
+	}
+
+	// 자동 로그인
+	@Get('log-in/auto')
+	async logInAuto(
+		@Headers('authorization') authHeader: string,
+	): Promise<boolean> {
+		return this.authService.logInAuto(authHeader);
+	}
+
+	// 카카오 로그인
+	@Post('log-in/kakao')
+	async logInKakao(
+		@Body() logInKakaoDto: LogInKakaoDto,
+	): Promise<LogInResponse | SignUpRedirectResponse> {
+		return this.authService.logIn(logInKakaoDto, Provider.Kakao);
+	}
+
+	// 카카오 회원가입
+	@Post('sign-up/kakao')
+	async signUpKakao(
+		@Body() signUpKakaoDto: SignUpKakaoDto,
+	): Promise<SignUpResponse> {
+		return this.authService.signUp(signUpKakaoDto, Provider.Kakao);
+	}
+
+	// 구글 로그인
+	@Post('log-in/google')
+	async logInGoogle(
+		@Body() logInGoogleDto: LogInGoogleDto,
+	): Promise<LogInResponse | SignUpRedirectResponse> {
+		return this.authService.logIn(logInGoogleDto, Provider.Google);
+	}
+
+	@Post('sign-up/google')
+	async signUpGoogle(
+		@Body() signUpGoogleDto: SignUpGoogleDto,
+	): Promise<SignUpResponse> {
+		return this.authService.signUp(signUpGoogleDto, Provider.Google);
 	}
 }
 export default AuthController;

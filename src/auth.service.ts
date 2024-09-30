@@ -1,4 +1,5 @@
 import {
+	ConflictException,
 	Injectable,
 	NotFoundException,
 	UnauthorizedException,
@@ -21,6 +22,7 @@ import {
 	SignUpRedirectResponse,
 	SignUpResponse,
 } from './auth.interface';
+import { isLogInGoogleDto, isLogInKakaoDto, isSignUpGoogleDto, isSignUpKakaoDto, SignUpBaseDto, SignUpGoogleDto, SignUpKakaoDto } from './dtos/auth.dto';
 
 @Injectable()
 class AuthService {
@@ -32,19 +34,19 @@ class AuthService {
 	) { }
 
 	// 카카오, 구글 로그인
-	async logIn(
-		token: string,
+	async logIn<T>(
+		logInDto: T,
 		provider: Provider,
 	): Promise<LogInResponse | SignUpRedirectResponse> {
 		let email: string;
 		let socialId: string;
 
-		if (provider === Provider.Kakao) {
-			const payload = await AuthService.validateKakaoToken(token);
+		if (provider === Provider.Kakao && isLogInKakaoDto(logInDto)) {
+			const payload = await AuthService.validateKakaoToken(logInDto.accessToken);
 			email = payload.kakao_account.email;
 			socialId = payload.id;
-		} else if (provider === Provider.Google) {
-			const payload = await this.validateGoogleToken(token);
+		} else if (provider === Provider.Google && isLogInGoogleDto(logInDto)) {
+			const payload = await this.validateGoogleToken(logInDto.idToken);
 			email = payload.email;
 			socialId = payload.sub;
 		} else {
@@ -158,6 +160,7 @@ class AuthService {
 	// 자동 로그인
 	async logInAuto(authHeader: string): Promise<boolean> {
 		const token = await AuthService.authenticate(authHeader);
+
 		try {
 			const decoded = await this.jwtService.verify(token, {
 				secret: process.env.JWT_SECRET,
@@ -171,33 +174,39 @@ class AuthService {
 		}
 	}
 
-	// 회원가입
-	async signUp(
-		nick: string,
-		token: string,
+	async signUp<T extends SignUpBaseDto>(
+		signUpDto: T,
 		provider: Provider,
-		givenName: string = 'default name',
 	): Promise<SignUpResponse> {
-		let name = givenName;
+		let { nick } = signUpDto;
+		let nameTemp: string;
 		let email: string;
 		let socialId: string;
 
-		if (provider === Provider.Kakao) {
-			const payload = await AuthService.validateKakaoToken(token);
+		if (provider === Provider.Kakao && isSignUpKakaoDto(signUpDto)) {
+			const { name, accessToken } = signUpDto as SignUpKakaoDto;
+			const payload = await AuthService.validateKakaoToken(accessToken);
+			nameTemp = name;
 			email = payload.kakao_account.email;
 			socialId = payload.id;
-		} else if (provider === Provider.Google) {
-			const payload = await this.validateGoogleToken(token);
-			name = payload.name;
+		} else if (provider === Provider.Google && isSignUpGoogleDto(signUpDto)) {
+			const { idToken } = signUpDto as SignUpGoogleDto;
+			const payload = await this.validateGoogleToken(idToken);
+			nameTemp = payload.name;
 			email = payload.email;
 			socialId = payload.sub;
 		} else {
 			throw new UnauthorizedException('Unsupported provider');
 		}
 
+		const existingUser = await this.userRepository.findOneBy({ socialId: socialId });
+		if (existingUser) {
+			throw new ConflictException(`User with socialId ${socialId} already exists.`);
+		}
+
 		const newUser = this.userRepository.create({
 			socialId,
-			name,
+			name: nameTemp,
 			email,
 			nick,
 			provider,
@@ -206,36 +215,6 @@ class AuthService {
 
 		const jwt = await this.createJwt(newUser.socialId);
 		return { jwt, userInfo: { nick: newUser.nick } };
-	}
-
-	// 닉네임 검증 - true: 유효함, false: 유효하지 않음
-	async validateNick(nick: string): Promise<boolean> {
-		const isDuplicated = await this.checkNickDuplication(nick);
-		if (isDuplicated) {
-			return false;
-		}
-		const isBadWords = await AuthService.checkNickBadWords(nick);
-		if (isBadWords) {
-			return false;
-		}
-		return true;
-	}
-
-	// 닉네임 중복 체크 - true: 중복됨, false: 중복되지 않음
-	async checkNickDuplication(nick: string): Promise<boolean> {
-		const user = await this.userRepository.findOneBy({ nick });
-
-		if (user) {
-			return true;
-		}
-		return false;
-	}
-
-	// 닉네임 비속어 체크 - true: 비속어, false: 비속어 아님
-	static async checkNickBadWords(nick: string): Promise<boolean> {
-		const json = fs.readFileSync('badwords.json', 'utf-8');
-		const { badWords } = JSON.parse(json);
-		return badWords.some((badWord: string) => nick.includes(badWord));
 	}
 }
 export default AuthService;
