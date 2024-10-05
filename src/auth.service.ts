@@ -22,7 +22,15 @@ import {
 	SignUpRedirectResponse,
 	SignUpResponse,
 } from './auth.interface';
-import { isLogInGoogleDto, isLogInKakaoDto, isSignUpGoogleDto, isSignUpKakaoDto, SignUpBaseDto, SignUpGoogleDto, SignUpKakaoDto } from './dtos/auth.dto';
+import {
+	isLogInGoogleDto,
+	isLogInKakaoDto,
+	isSignUpGoogleDto,
+	isSignUpKakaoDto,
+	SignUpBaseDto,
+	SignUpGoogleDto,
+	SignUpKakaoDto,
+} from './dtos/auth.dto';
 
 @Injectable()
 class AuthService {
@@ -31,7 +39,7 @@ class AuthService {
 		private readonly userRepository: Repository<User>,
 		private readonly jwtService: JwtService,
 		private readonly googleClient: OAuth2Client,
-	) { }
+	) {}
 
 	// 카카오, 구글 로그인
 	async logIn<T>(
@@ -42,7 +50,9 @@ class AuthService {
 		let socialId: string;
 
 		if (provider === Provider.Kakao && isLogInKakaoDto(logInDto)) {
-			const payload = await AuthService.validateKakaoToken(logInDto.accessToken);
+			const payload = await AuthService.validateKakaoToken(
+				logInDto.accessToken,
+			);
 			email = payload.kakao_account.email;
 			socialId = payload.id;
 		} else if (provider === Provider.Google && isLogInGoogleDto(logInDto)) {
@@ -129,20 +139,6 @@ class AuthService {
 		return this.jwtService.sign({ socialId });
 	}
 
-	// JWT 인증
-	async validateJwt(authHeader: string, response: Response): Promise<void> {
-		const token = await AuthService.authenticate(authHeader);
-		try {
-			const decoded = await this.jwtService.verifyAsync(token, {
-				secret: process.env.JWT_SECRET,
-			});
-
-			response.status(200).json({ socialId: decoded.socialId });
-		} catch (error) {
-			throw new UnauthorizedException('Invalid Token');
-		}
-	}
-
 	// 헤더 인증 정보 추출
 	static async authenticate(authHeader: string): Promise<string> {
 		if (!authHeader) {
@@ -189,7 +185,10 @@ class AuthService {
 			nameTemp = name;
 			email = payload.kakao_account.email;
 			socialId = payload.id;
-		} else if (provider === Provider.Google && isSignUpGoogleDto(signUpDto)) {
+		} else if (
+			provider === Provider.Google &&
+			isSignUpGoogleDto(signUpDto)
+		) {
 			const { idToken } = signUpDto as SignUpGoogleDto;
 			const payload = await this.validateGoogleToken(idToken);
 			nameTemp = payload.name;
@@ -199,9 +198,13 @@ class AuthService {
 			throw new UnauthorizedException('Unsupported provider');
 		}
 
-		const existingUser = await this.userRepository.findOneBy({ socialId: socialId });
+		const existingUser = await this.userRepository.findOneBy({
+			socialId: socialId,
+		});
 		if (existingUser) {
-			throw new ConflictException(`User with socialId ${socialId} already exists.`);
+			throw new ConflictException(
+				`User with socialId ${socialId} already exists.`,
+			);
 		}
 
 		const newUser = this.userRepository.create({

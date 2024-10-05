@@ -18,20 +18,16 @@ import {
 	SignUpRedirectResponse,
 	SignUpResponse,
 } from './auth.interface';
-import { LogInGoogleDto, LogInKakaoDto, SignUpGoogleDto, SignUpKakaoDto } from './dtos/auth.dto';
+import {
+	LogInGoogleDto,
+	LogInKakaoDto,
+	SignUpGoogleDto,
+	SignUpKakaoDto,
+} from './dtos/auth.dto';
 
 @Controller('auth')
 class AuthController {
-	constructor(private readonly authService: AuthService) { }
-
-	// JWT 인증
-	@Get('jwt/validate')
-	async getValidateJwt(
-		@Headers('authorization') authHeader: string,
-		@Res() response: Response,
-	): Promise<void> {
-		return this.authService.validateJwt(authHeader, response);
-	}
+	constructor(private readonly authService: AuthService) {}
 
 	// 자동 로그인
 	@Get('log-in/auto')
@@ -65,6 +61,7 @@ class AuthController {
 		return this.authService.logIn(logInGoogleDto, Provider.Google);
 	}
 
+	// 구글 회원가입
 	@Post('sign-up/google')
 	async signUpGoogle(
 		@Body() signUpGoogleDto: SignUpGoogleDto,
